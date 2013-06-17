@@ -37,9 +37,13 @@ if ! [ -x "$DAEMON" ]; then
   exit 5
 fi
 
-
 start() {
   log_daemon_msg "Starting $DESC" "$NAME"
+  status_of_proc "$DAEMON" "$NAME" 2>&1 >/dev/null
+  if [ $? -eq 0 ]; then
+      echo "$NAME already running"
+      exit 0
+  fi
 
   # Return
   #   0 if daemon has been started
@@ -59,8 +63,11 @@ stop() {
   #   1 if daemon was already stopped
   #   2 if daemon could not be stopped
   #   other if a failure occurred
-  start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name node
+  start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
   RETVAL=$?
+  if [ $RETVAL -eq 0 ]; then
+      rm $PIDFILE
+  fi
   # Many daemons don't delete their pidfiles when they exit.
   log_end_msg $RETVAL
   return $RETVAL
